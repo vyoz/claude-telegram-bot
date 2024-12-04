@@ -22,12 +22,14 @@ A Telegram bot powered by Claude AI that allows users to interact with Claude th
 
 1. Clone the repository or download the source code:
 ```bash
-git clone https://github.com/yourusername/claude-telegram-bot.git
+git clone https://github.com/vyoz/claude-telegram-bot.git
 cd claude-telegram-bot
 ```
 
 2. Install required dependencies:
 ```bash
+python3 -m venv venv
+source venv/bin/activate
 pip install python-telegram-bot anthropic python-json-logger
 ```
 
@@ -42,7 +44,7 @@ pip install python-telegram-bot anthropic python-json-logger
     },
     "claude": {
         "api_key": "YOUR_CLAUDE_API_KEY",
-        "model": "claude-3-sonnet-20240229",
+        "model": "claude-3-sonnet-20241022",
         "max_tokens": 1024,
         "temperature": 0.7,
         "api_url": "https://api.anthropic.com/v1"
@@ -85,7 +87,7 @@ pip install python-telegram-bot anthropic python-json-logger
 
 1. Start the bot:
 ```bash
-python bot.py
+venv/bin/python bot.py
 ```
 
 2. The bot will begin logging to both console and the specified log file.
