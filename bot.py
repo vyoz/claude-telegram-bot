@@ -221,8 +221,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     username = update.effective_user.username
     
     # Check user permissions
-    if CONFIG['telegram']['allowed_users'] and str(user_id) not in CONFIG['telegram']['allowed_users']:
-        logger.warning(f"Unauthorized access attempt: {user_id} ({username})")
+    if CONFIG['telegram']['allowed_users'] and username not in CONFIG['telegram']['allowed_users']:
+        logger.warning(f"Unauthorized access attempt: {username} ({user_id}), please add {username} to config.json - telegram.allowed_users")
         await update.message.reply_text("⚠️ Sorry, you don't have permission to use this bot")
         return
 
