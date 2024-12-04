@@ -1,53 +1,84 @@
 # Claude Telegram Bot
 
-A Telegram bot powered by Claude AI that allows users to interact with Claude through Telegram messages. The bot supports both private chats and group conversations, with features like rate limiting, permission control, and comprehensive logging.
+A Telegram bot powered by Anthropic's Claude AI that responds to messages in both private chats and group conversations. The bot uses Claude's API to provide intelligent responses while featuring rate limiting, permission control, and comprehensive logging.
 
 ## Features
 
-- **Claude AI Integration**: Leverages Claude's powerful language model for intelligent responses
-- **Group Chat Support**: Can be added to group chats and responds when mentioned
-- **Rate Limiting**: Prevents abuse through configurable message rate limits
-- **Permission Control**: Configurable user and group access control
-- **Command System**: Built-in commands for basic interactions
-- **Logging System**: Comprehensive logging for monitoring and debugging
-- **Configuration Management**: Easy configuration through JSON file
+- **Claude AI Integration**: 
+  - Powered by Anthropic's Claude 3 models
+  - Configurable model parameters
+  - Error handling and retry mechanism
+- **Chat Support**: 
+  - Works in private chats and groups
+  - Responds when mentioned (@bot)
+  - Group-specific configurations
+- **Security Features**:
+  - Rate limiting to prevent abuse
+  - User and group access control
+  - Secure API key management
+  - Comprehensive logging
 
-## Prerequisites
+## Setup Guide
 
-- Python 3.8 or higher
-- A Telegram Bot Token (obtained from [@BotFather](https://t.me/botfather))
-- An Anthropic API Key (obtained from [Anthropic's website](https://www.anthropic.com/))
+### 1. Create a Telegram Bot
 
-## Installation
+1. Open Telegram and search for [@BotFather](https://t.me/botfather)
+2. Start a chat and send `/newbot`
+3. Follow these steps:
+   - Send your bot's display name (e.g., "My Claude Assistant")
+   - Send your bot's username (must end in 'bot', e.g., "my_claude_bot")
+4. BotFather will respond with your bot token. It looks like:
+   ```
+   123456789:ABCdefGHIjklmNOPqrstUVwxyz
+   ```
+   Keep this token secure!
 
-1. Clone the repository or download the source code:
+5. Set up bot commands with BotFather:
+   ```
+   /setcommands
+   ```
+   Then send this list:
+   ```
+   start - Start the bot and see welcome message
+   help - Display help information
+   status - Check system status
+   reset - Reset conversation history
+   ```
+
+### 2. Get Claude API Key
+
+1. Sign up at [Anthropic's website](https://www.anthropic.com/)
+2. Navigate to your account settings/API section
+3. Generate a new API key
+4. Copy your API key securely
+
+### 3. Installation
+
+1. Clone the repository:
 ```bash
-git clone https://github.com/vyoz/claude-telegram-bot.git
+git clone https://github.com/yourusername/claude-telegram-bot.git
 cd claude-telegram-bot
 ```
 
-2. Install required dependencies:
+2. Install dependencies:
 ```bash
-python3 -m venv venv
-source venv/bin/activate
-pip install python-telegram-bot anthropic python-json-logger
+pip install python-telegram-bot anthropic tenacity python-json-logger
 ```
 
-3. Create a configuration file `config.json` in the project root:
+3. Create and configure `config.json`:
 ```json
 {
     "telegram": {
         "token": "YOUR_TELEGRAM_BOT_TOKEN",
-        "allowed_users": [],
-        "allowed_groups": [],
+        "allowed_users": [],            // Empty array allows all users
+        "allowed_groups": [],           // Empty array allows all groups
         "max_response_length": 4096
     },
     "claude": {
         "api_key": "YOUR_CLAUDE_API_KEY",
-        "model": "claude-3-sonnet-20241022",
+        "model": "claude-3-sonnet-20240229",
         "max_tokens": 1024,
-        "temperature": 0.7,
-        "api_url": "https://api.anthropic.com/v1"
+        "temperature": 0.7
     },
     "logging": {
         "level": "INFO",
@@ -57,121 +88,98 @@ pip install python-telegram-bot anthropic python-json-logger
 }
 ```
 
-## Telegram Bot Setup
+Configuration explanation:
+- `telegram.token`: Your bot token from BotFather
+- `telegram.allowed_users`: Array of Telegram user IDs that can use the bot
+- `telegram.allowed_groups`: Array of Telegram group IDs where the bot can operate
+- `telegram.max_response_length`: Maximum length of bot responses
+- `claude.api_key`: Your Claude API key
+- `claude.model`: Claude model to use
+- `claude.max_tokens`: Maximum tokens in response
+- `claude.temperature`: Response randomness (0.0-1.0)
 
-1. Create a new bot on Telegram:
-   - Open Telegram and search for [@BotFather](https://t.me/botfather)
-   - Send `/newbot` command
-   - Follow the instructions to choose a name and username for your bot
-   - Copy the API token provided by BotFather
+### 4. Running the Bot
 
-2. Configure your bot:
-   - Set bot commands using BotFather (optional):
-     ```
-     /start - Start the bot and see welcome message
-     /help - Display help information
-     /status - Check system status
-     /reset - Reset conversation history
-     ```
-   - Enable inline mode if needed: `/setinline`
-   - Set bot profile picture: `/setuserpic`
-   - Set bot description: `/setdescription`
-   - Set bot about text: `/setabouttext`
-
-3. Configure permissions (optional):
-   - Add allowed user IDs to `allowed_users` in config.json
-   - Add allowed group IDs to `allowed_groups` in config.json
-   - Leave arrays empty to allow all users/groups
-
-## Running the Bot
-
-1. Start the bot:
+Standard start:
 ```bash
-venv/bin/python bot.py
+python bot.py
 ```
 
-2. The bot will begin logging to both console and the specified log file.
+Using Screen (recommended for servers):
+```bash
+screen -S claudebot
+python bot.py
+# Press Ctrl+A+D to detach
+```
 
 ## Usage
 
-### Basic Commands
+### In Private Chat
+Simply send messages directly to the bot.
 
-- `/start`: Initialize the bot and see welcome message
-- `/help`: Display help information and available commands
-- `/status`: Check the current status of the bot
-- `/reset`: Reset your conversation history
+### In Groups
+1. Add the bot to your group
+2. Mention the bot with your message:
+   ```
+   @your_bot_username What is the meaning of life?
+   ```
 
-### Group Chat Usage
+### Commands
+- `/start` - Initialize the bot
+- `/help` - Show available commands
+- `/status` - Check bot status
+- `/reset` - Reset conversation
 
-1. Add the bot to a group
-2. Mention the bot (@your_bot_username) followed by your message
-3. The bot will respond to the message if:
-   - The group is in the allowed list (if configured)
-   - The user has permission (if configured)
-   - The rate limit hasn't been exceeded
+## Security Recommendations
 
-### Private Chat Usage
+1. Keep your `config.json` secure:
+```bash
+chmod 600 config.json
+```
 
-Simply send messages to the bot directly. The same permission and rate limit rules apply.
+2. Don't share or commit your configuration file
 
-## Configuration Options
+3. Regularly rotate your API keys
 
-### Telegram Settings
-- `token`: Your Telegram Bot API token
-- `allowed_users`: Array of user IDs allowed to use the bot
-- `allowed_groups`: Array of group IDs where the bot can operate
-- `max_response_length`: Maximum length of bot responses
-
-### Claude Settings
-- `api_key`: Your Anthropic API key
-- `model`: Claude model to use
-- `max_tokens`: Maximum tokens in the response
-- `temperature`: Response randomness (0.0 to 1.0)
-
-### Logging Settings
-- `level`: Logging level (INFO, DEBUG, WARNING, ERROR, CRITICAL)
-- `format`: Log message format
-- `file`: Log file location
-
-## Security Considerations
-
-- Keep your `config.json` file secure and never commit it to version control
-- Regularly rotate your API keys
-- Monitor the bot's usage through logs
-- Use the permission system to restrict access when needed
-- Rate limiting helps prevent abuse
+4. Monitor the log file for unauthorized access attempts
 
 ## Troubleshooting
 
 ### Common Issues
 
 1. Bot not responding:
-   - Check if the bot is running
-   - Verify your Telegram token
-   - Check the log file for errors
-   - Ensure the user/group has permission
+   - Check if bot is running
+   - Verify Telegram token
+   - Check permissions in config.json
+   - Look for errors in bot.log
 
 2. Rate limit issues:
-   - Wait for the cooldown period
-   - Check the rate limit settings in the code
+   - Default: 1 message per 5 seconds per user
+   - Adjust in code if needed
 
-3. API errors:
-   - Verify your Claude API key
-   - Check your API usage quota
-   - Ensure the model name is correct
+3. Permission errors:
+   - Add user/group IDs to config.json
+   - Check log file for denied access attempts
 
-### Logging
+### Getting User and Group IDs
 
-The bot logs all activities to both console and file. Check the log file specified in `config.json` for detailed information about:
-- Incoming messages
-- API calls
-- Errors and exceptions
-- Rate limit triggers
-- Permission denials
+1. To get your user ID:
+   - Send a message to [@userinfobot](https://t.me/userinfobot)
+
+2. To get a group ID:
+   - Add [@userinfobot](https://t.me/userinfobot) to your group
+   - Check the ID it provides
 
 ## Contributing
 
-Feel free to submit issues, fork the repository, and create pull requests for any improvements.
+Contributions are welcome! Please feel free to submit issues and pull requests.
+
+## Support
+
+- Create an issue for bug reports
+- Check logs in `bot.log` for errors
+- Make sure your API keys are valid
+- Verify your configuration matches the example
 
 ## License
 

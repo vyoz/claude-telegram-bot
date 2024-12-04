@@ -3,7 +3,7 @@ import logging
 import os
 from datetime import datetime, timedelta
 from collections import defaultdict
-from typing import Dict, List, Optional
+from typing import Dict, Optional
 
 from telegram import Update, BotCommand
 from telegram.ext import (
@@ -14,6 +14,7 @@ from telegram.ext import (
     ContextTypes,
 )
 from anthropic import Anthropic
+from tenacity import retry, stop_after_attempt, wait_exponential
 
 # Load configuration
 def load_config() -> dict:
@@ -81,10 +82,49 @@ class UserRateLimit:
 
 rate_limiter = UserRateLimit()
 
+class AIProvider:
+    """Class to handle Claude AI interactions"""
+    
+    def __init__(self, config: Dict):
+        """Initialize AI provider with configuration"""
+        self.config = config
+        self.client = Anthropic(api_key=config['claude']['api_key'])
+    
+    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=4, max=10))
+    async def get_response(self, message: str) -> str:
+        """
+        Get response from Claude API
+        
+        Args:
+            message: User message
+            
+        Returns:
+            AI response text
+        """
+        try:
+            response = self.client.messages.create(
+                model=self.config['claude']['model'],
+                max_tokens=self.config['claude']['max_tokens'],
+                temperature=self.config['claude']['temperature'],
+                messages=[{
+                    "role": "user",
+                    "content": message
+                }]
+            )
+            
+            return response.content[0].text
+                
+        except Exception as e:
+            logger.error(f"Error getting response from Claude: {str(e)}")
+            raise
+
+# Initialize AI provider
+ai_provider = AIProvider(CONFIG)
+
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle /start command"""
     welcome_message = (
-        "👋 Hello! I'm an AI assistant powered by Claude API.\n\n"
+        "👋 Hello! I'm an AI assistant powered by Claude.\n\n"
         "📝 How to use:\n"
         "1. Mention me (@bot) in a group to start a conversation\n"
         "2. Use /help to see all available commands\n"
@@ -123,7 +163,6 @@ async def status_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def reset_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle /reset command"""
     user_id = update.effective_user.id
-    # Add logic here to reset user session history if needed
     await update.message.reply_text("✨ Your conversation history has been reset")
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -173,19 +212,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # Log user request
         logger.info(f"Received request - User: {user_id} ({username}) - Message: {question[:100]}...")
 
-        # Call Claude API
-        message = anthropic.messages.create(
-            model=CONFIG['claude']['model'],
-            max_tokens=CONFIG['claude']['max_tokens'],
-            temperature=CONFIG['claude']['temperature'],
-            messages=[{
-                "role": "user",
-                "content": question
-            }]
-        )
-
-        # Send response
-        response_text = message.content[0].text
+        # Get AI response
+        response_text = await ai_provider.get_response(question)
         
         # Check response length
         if len(response_text) > CONFIG['telegram']['max_response_length']:
@@ -225,14 +253,14 @@ async def setup_commands(application: Application):
     ]
     await application.bot.set_my_commands(commands)
 
-def main():
+async def main():
     """Main function"""
     try:
         # Create application
         application = Application.builder().token(CONFIG['telegram']['token']).build()
 
         # Setup commands
-        application.run_until_complete(setup_commands(application))
+        await setup_commands(application)
 
         # Add handlers
         application.add_handler(CommandHandler("start", start))
@@ -246,11 +274,13 @@ def main():
 
         # Start the bot
         logger.info("Bot started...")
-        application.run_polling()
+        await application.run_polling(allowed_updates=Update.ALL_TYPES)
 
     except Exception as e:
         logger.critical(f"Critical error while starting bot: {str(e)}")
         raise
 
 if __name__ == '__main__':
-    main()
+    # Run the async main function
+    import asyncio
+    asyncio.run(main())
