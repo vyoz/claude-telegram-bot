@@ -1,4 +1,8 @@
 python-telegram-bot 
-anthropic 
 python-json-logger
+requests
+responses
 tenacity
+pytest 
+pytest-asyncio
+python-telegram-bot[callback-data]
