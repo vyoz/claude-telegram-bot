@@ -7,10 +7,17 @@
     },
     "claude": {
         "api_key": "YOUR_CLAUDE_API_KEY",
-        "model": "claude-3-sonnet-20241022",
+	"api_url": "https://api.anthropic.com/v1",
+	"api_version": "2023-06-01",
+        "model": "claude-3-5-sonnet-20241022",
         "max_tokens": 1024,
         "temperature": 0.7,
-        "api_url": "https://api.anthropic.com/v1"
+	"timeout": 30,
+	"system_prompt": "Your custom system prompt here"
+    },
+    "rate_limit": {
+        "cooldown_seconds": 5,
+        "max_messages_per_hour": 100
     },
     "logging": {
         "level": "INFO",
