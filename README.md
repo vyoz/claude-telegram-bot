@@ -1,11 +1,13 @@
 # Claude Telegram Bot
 
+[English](README.md) | [中文](README_CN.md)
+
 A Telegram bot powered by Anthropic's Claude AI that responds to messages in both private chats and group conversations. The bot uses Claude's API to provide intelligent responses while featuring rate limiting, permission control, and comprehensive logging.
 
 ## Features
 
 - **Claude AI Integration**: 
-  - Powered by Anthropic's Claude 3 models
+  - Powered by Anthropic's Claude 3.5 model
   - Configurable model parameters
   - Error handling and retry mechanism
 - **Chat Support**: 
@@ -56,7 +58,7 @@ A Telegram bot powered by Anthropic's Claude AI that responds to messages in bot
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/claude-telegram-bot.git
+git clone https://github.com/vyoz/claude-telegram-bot.git
 cd claude-telegram-bot
 ```
 
@@ -70,35 +72,135 @@ pip install python-telegram-bot anthropic tenacity python-json-logger
 {
     "telegram": {
         "token": "YOUR_TELEGRAM_BOT_TOKEN",
-        "allowed_users": [],            // Empty array allows all users
-        "allowed_groups": [],           // Empty array allows all groups
+        "allowed_users": ["username1", "username2"],  // Telegram usernames without @
+        "allowed_groups": ["-1001234567890"],        // Group IDs with -100 prefix
         "max_response_length": 4096
     },
     "claude": {
         "api_key": "YOUR_CLAUDE_API_KEY",
-        "model": "claude-3-sonnet-20240229",
-        "max_tokens": 1024,
+        "model": "claude-3-5-sonnet-20240229",
+        "max_tokens": 4096,
         "temperature": 0.7
     },
     "logging": {
         "level": "INFO",
         "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
         "file": "bot.log"
+    },
+    "rate_limit": {
+        "max_messages_per_hour": 50,
+        "cooldown_seconds": 5
     }
 }
 ```
 
 Configuration explanation:
 - `telegram.token`: Your bot token from BotFather
-- `telegram.allowed_users`: Array of Telegram user IDs that can use the bot
+- `telegram.allowed_users`: Array of Telegram usernames (without @ symbol) that can use the bot
 - `telegram.allowed_groups`: Array of Telegram group IDs where the bot can operate
 - `telegram.max_response_length`: Maximum length of bot responses
 - `claude.api_key`: Your Claude API key
-- `claude.model`: Claude model to use
+- `claude.model`: Claude model to use (claude-3-5-sonnet-20240229)
 - `claude.max_tokens`: Maximum tokens in response
 - `claude.temperature`: Response randomness (0.0-1.0)
+- `rate_limit.max_messages_per_hour`: Maximum messages per user per hour
+- `rate_limit.cooldown_seconds`: Minimum seconds between messages
 
-### 4. Running the Bot
+## Permission Control
+
+### User Permissions
+
+1. Allow specific users:
+   ```json
+   "allowed_users": ["username1", "username2"]
+   ```
+   - Use Telegram usernames without @ symbol
+   - Case-sensitive
+   - Empty array allows all users
+
+2. Get user information:
+   - Send a message to [@userinfobot](https://t.me/userinfobot)
+   - Note your username (without @)
+   - Add it to the allowed_users list
+
+### Group Permissions
+
+1. Allow specific groups:
+   ```json
+   "allowed_groups": ["-1001234567890", "-1009876543210"]
+   ```
+
+2. Get group ID:
+   Method 1: Using Bot Commands
+   - Add the bot to your group
+   - Use the `/chatid` command
+   - Copy the returned ID (includes -100 prefix)
+
+   Method 2: Using Raw Data Bot
+   - Add [@RawDataBot](https://t.me/RawDataBot) to your group
+   - Copy the "chat.id" value
+   - Add -100 prefix if not present
+
+3. Group Privacy Settings:
+   - Talk to @BotFather
+   - Use `/mybots`
+   - Select your bot
+   - Go to "Bot Settings" > "Group Privacy"
+   - Select "Turn off"
+
+## Testing
+
+### 1. Setup Test Environment
+
+1. Install test dependencies:
+```bash
+pip install pytest pytest-asyncio pytest-cov
+```
+
+2. Create test configuration:
+```bash
+cp config.json config.test.json
+```
+- Modify config.test.json with test credentials
+- Never use production API keys in tests
+
+### 2. Running Tests
+
+Run all tests:
+```bash
+python -m pytest test_bot.py -v
+```
+
+Run specific test cases:
+```bash
+python -m pytest test_bot.py -k "test_name" -v
+```
+
+Get test coverage report:
+```bash
+python -m pytest --cov=bot test_bot.py
+```
+
+### 3. Available Test Suites
+
+The test suite includes:
+- UserRateLimit tests
+- AIProvider tests
+- Message handler tests
+- Command handler tests
+- Permission control tests
+
+### 4. Writing New Tests
+
+Add your tests to `test_bot.py`:
+```python
+class TestYourFeature(unittest.TestCase):
+    async def test_your_function(self):
+        # Your test code here
+        pass
+```
+
+## Running the Bot
 
 Standard start:
 ```bash
@@ -161,14 +263,11 @@ chmod 600 config.json
    - Add user/group IDs to config.json
    - Check log file for denied access attempts
 
-### Getting User and Group IDs
-
-1. To get your user ID:
-   - Send a message to [@userinfobot](https://t.me/userinfobot)
-
-2. To get a group ID:
-   - Add [@userinfobot](https://t.me/userinfobot) to your group
-   - Check the ID it provides
+4. Permission denied errors:
+   - Check username spelling in config.json
+   - Verify group ID format (should include -100 prefix)
+   - Look for "Unauthorized access attempt" in logs
+   - Ensure bot has correct privacy settings for groups
 
 ## Contributing
 
