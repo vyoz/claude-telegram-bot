@@ -202,16 +202,61 @@ class TestYourFeature(unittest.TestCase):
 
 ## Running the Bot
 
-Standard start:
+### Standard Start
 ```bash
 python bot.py
 ```
 
-Using Screen (recommended for servers):
+### Screen Method (Server)
 ```bash
 screen -S claudebot
 python bot.py
 # Press Ctrl+A+D to detach
+```
+
+### System Service (Ubuntu 22.04)
+1. Create service user:
+```bash
+sudo useradd -r -s /bin/false claude
+```
+
+2. Set up directory:
+```bash
+sudo mkdir /opt/claude-telegram-bot
+sudo chown claude:claude /opt/claude-telegram-bot
+sudo cp bot.py config.json /opt/claude-telegram-bot/
+```
+
+3. Create service file `/etc/systemd/system/claude-bot.service`:
+```ini
+[Unit]
+Description=Claude Telegram Bot
+After=network.target
+
+[Service]
+Type=simple
+User=claude
+Group=claude
+WorkingDirectory=/opt/claude-telegram-bot
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/usr/bin/python3 /opt/claude-telegram-bot/bot.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+```
+
+4. Start service:
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable claude-bot
+sudo systemctl start claude-bot
+```
+
+5. Check status:
+```bash
+sudo systemctl status claude-bot
 ```
 
 ## Usage

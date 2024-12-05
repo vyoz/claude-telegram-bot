@@ -202,16 +202,61 @@ class TestYourFeature(unittest.TestCase):
 
 ## 运行机器人
 
-标准启动：
+### 标准启动
 ```bash
 python bot.py
 ```
 
-使用 Screen（推荐在服务器上使用）：
+### Screen 方法（服务器）
 ```bash
 screen -S claudebot
 python bot.py
 # 按 Ctrl+A+D 分离
+```
+
+### 系统服务（Ubuntu 22.04）
+1. 创建服务用户：
+```bash
+sudo useradd -r -s /bin/false claude
+```
+
+2. 设置目录：
+```bash
+sudo mkdir /opt/claude-telegram-bot
+sudo chown claude:claude /opt/claude-telegram-bot
+sudo cp bot.py config.json /opt/claude-telegram-bot/
+```
+
+3. 创建服务文件 `/etc/systemd/system/claude-bot.service`：
+```ini
+[Unit]
+Description=Claude Telegram Bot
+After=network.target
+
+[Service]
+Type=simple
+User=claude
+Group=claude
+WorkingDirectory=/opt/claude-telegram-bot
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/usr/bin/python3 /opt/claude-telegram-bot/bot.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+```
+
+4. 启动服务：
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable claude-bot
+sudo systemctl start claude-bot
+```
+
+5. 检查状态：
+```bash
+sudo systemctl status claude-bot
 ```
 
 ## 使用方法
